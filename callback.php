@@ -20,7 +20,7 @@ $line_source = $jsonObj->{"events"}[0]->{"source"};
 
 $messageData = [
     'type' => 'text',
-    'text' => $とにかく眠い,
+    'text' => $text
 ];
 
 
