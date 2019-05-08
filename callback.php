@@ -1,59 +1,47 @@
 <?php
-//認証情報設定
-$authentication_array["channel_id"] = "1563458677";
-$authentication_array["channel_secret"] = "613d2a45e10f435832d56bca81ead92d";
+/*アクセストークンを「''」内に記述する*/
+$accessToken = 'DnJ9iELvqnB97bPOkDi8ux6Daq5XYywi/SSnpA/RTK+8KbnAatZTJnrUnyymPLlXqqagzabogjonAMPazlY2aNlQhJ0DAvkWV0fIXb89hMiFt3ztth42ld/GovWeKJzPU6UtBhykWxjWGQVPeKXLgQdB04t89/1O/w1cDnyilFU=s';
+
+/*php://input(送られてきたデータが格納されているPHP固有の倉庫)から取り込む*/
+$jsonString = file_get_contents('php://input');
+error_log($jsonString);
+
+/*json形式のデータをPHPが理解できるような形式にデコードする*/
+$jsonObj = json_decode($jsonString);
+
+/*デコードされたデータは連想配列（配列の中に配列が入ってる構造）になっているので、
+ *取り込みたいデータを配列から指定して取り込む。*/
+$message = $jsonObj->{"events"}[0]->{"message"};
+$text = $message->{"text"};
+$replyToken = $jsonObj->{"events"}[0]->{"replyToken"};
+$line_source = $jsonObj->{"events"}[0]->{"source"};
+
+/*自分がやりたい処理を書く(例として、オウム返しの処理を書く)*/
+
+$messageData = [
+    'type' => 'text',
+    'text' => $text
+];
 
 
-//データ取得
-$json_string = file_get_contents('php://input');
-$json_object = json_decode($json_string);
+/*返信用に処理されたデータを成型する*/
+$response = [
+    'replyToken' => $replyToken,
+    'messages' => [$messageData]
+];
 
-//取得データからの抽出
-$message_from = $json_object->{"result"}[0]->{"content"}->{"from"};    //メッセージ送信者
-$message_text = $json_object->{"result"}[0]->{"content"}->{"text"};    //送信されたメッセージ
+/*エラーの場合にログが出るようにする処理*/
+error_log('[[[TEST]]]'.json_encode($response));
 
-//返信メッセージ
-$return_message_text = "「" . $message_text . "」じゃねーよｗｗｗ";
-
-//返信メッセージの送信
-sending_messages($authentication_array, $message_from, $return_message_text);
-
-?>
-<?php
-//メッセージの送信
-function sending_messages($authentication_array, $message_from, $return_message_text){
-    //API URL
-    $url = "https://trialbot-api.line.me/v1/events";
-
-    //返信メッセージの設定
-    $message_format = ['contentType' => 1,"toType" => 1,"text" => $return_message_text];
-
-    //POSTデータ
-    $post_data = [
-        "to" => [$message_from],
-        "toChannel" => "1383378250",
-        "eventType" => "138311608800106203",
-        "content" => $message_format
-    ];
-
-    //ヘッダー設定
-    $headers = array(
-        "Content-Type: application/json",
-        "X-Line-ChannelID: " . $authentication_array["channel_id"],
-        "X-Line-ChannelSecret: " . $authentication_array["channel_secret"],
-    );
-
-    //curl実行
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post_data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        'Content-Type: application/json; charser=UTF-8',
-        'X-Line-ChannelID: ' . $authentication_array["channel_id"],
-        'X-Line-ChannelSecret: ' . $authentication_array["channel_secret"],
-        'X-Line-Trusted-User-With-ACL: ' . $authentication_array["mid"]
-    ));
-    $result = curl_exec($ch);
-    curl_close($ch);
+/*成形されたデータを返信する処理（いじらなくていい）*/
+$ch = curl_init('https://api.line.me/v2/bot/message/reply');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($response));
+curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+    'Content-Type: application/json; charser=UTF-8',
+    'Authorization: Bearer ' . $accessToken
+));
+$result = curl_exec($ch);
+error_log('[[[TEST]]]'.$result);
