@@ -19,8 +19,8 @@ $line_source = $jsonObj->{"events"}[0]->{"source"};
 /*自分がやりたい処理を書く(例として、オウム返しの処理を書く)*/
 
 $messageData = [
-    'type' => 'そんなことよりも眠い...zzzz',
-    'text' => $text
+    'type' => 'text',
+    'text' => $とにかく眠い,
 ];
 
 
